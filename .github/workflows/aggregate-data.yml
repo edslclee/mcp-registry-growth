@@ -1,0 +1,30 @@
+name: Aggregate MCP Server Data
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # Every hour on the hour
+  workflow_dispatch:      # Allow manual trigger
+
+jobs:
+  aggregate:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run aggregation script
+        run: pwsh scripts/aggregate-servers.ps1
+
+      - name: Commit and push updated data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/snapshots.csv
+          if (git diff --staged --quiet) {
+            Write-Host "No changes to commit"
+          } else {
+            git commit -m "Update server snapshots [$((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm'))]"
+            git push
+          }
+        shell: pwsh
