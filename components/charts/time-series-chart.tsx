@@ -16,14 +16,20 @@ export function TimeSeriesChart({
   showRemote = true,
   showTotal = true
 }: TimeSeriesChartProps) {
+  const formatXAxis = (dateStr: string) => {
+    const date = new Date(dateStr)
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
+
   return (
     <ResponsiveContainer width="100%" height={400}>
       <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
         <XAxis
-          dataKey="timestamp"
+          dataKey="date"
           stroke="#9ca3af"
           style={{ fontSize: '12px' }}
+          tickFormatter={formatXAxis}
         />
         <YAxis
           stroke="#9ca3af"

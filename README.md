@@ -26,8 +26,8 @@ This project provides real-time visualization of the MCP Registry ecosystem, tra
 - Radix UI (accessible components)
 
 ### Infrastructure
-- PowerShell Core (data collection script)
-- GitHub Actions (Windows runner for hourly data aggregation)
+- Bash (data collection script)
+- GitHub Actions (macOS runner for hourly data aggregation)
 - CSV file storage (time-series snapshots)
 
 ## Getting Started
@@ -35,7 +35,7 @@ This project provides real-time visualization of the MCP Registry ecosystem, tra
 ### Prerequisites
 
 - Node.js 18+ and npm
-- PowerShell Core 7+ (for running aggregation script)
+- Bash and jq (for running aggregation script)
 - Git
 
 ### Installation
@@ -71,19 +71,19 @@ The static files will be output to the `out/` directory.
 
 ### Manual Data Collection
 
-Run the PowerShell aggregation script manually:
-```powershell
-pwsh scripts/aggregate-servers.ps1
+Run the bash aggregation script manually:
+```bash
+bash scripts/aggregate-servers.sh
 ```
 
 This fetches the latest server counts from the MCP Registry API and appends a timestamped snapshot to `data/snapshots.csv`.
 
 ### Automated Collection
 
-The GitHub Actions workflow (`.github/workflows/aggregate-data.yml`) runs hourly on a Windows runner to collect data automatically. The workflow:
+The GitHub Actions workflow (`.github/workflows/aggregate-data.yml`) runs hourly on a macOS runner to collect data automatically. The workflow:
 
 1. Checks out the repository
-2. Executes the PowerShell script
+2. Executes the bash script
 3. Commits and pushes new snapshots to the repo
 4. Triggers a rebuild of the static site
 
@@ -106,7 +106,7 @@ mcp-registry-growth/
 │   ├── data-aggregator.ts   # Data aggregation logic
 │   └── utils.ts             # Utility functions
 ├── scripts/
-│   └── aggregate-servers.ps1 # PowerShell data collection script
+│   └── aggregate-servers.sh  # Bash data collection script
 ├── data/
 │   └── snapshots.csv        # Time-series data storage
 └── .github/workflows/
@@ -129,11 +129,33 @@ timestamp,total,local,remote
 
 ## Classification Logic
 
-Servers are classified based on their properties in the MCP Registry:
+Servers are classified based on their properties in the MCP Registry API response:
 
-- **Local Servers**: Have a `packages` property (npm packages)
-- **Remote Servers**: Have a `remotes` property (HTTP/SSE endpoints)
-- Servers can be counted in both categories if they have both properties
+### Classification Rules
+
+- **Local Servers**: Have a `server.packages` property (installable via npm/docker)
+- **Remote Servers**: Have a `server.remotes` property (accessible via HTTP/SSE endpoints)
+
+### Important Notes
+
+1. **Servers can belong to both categories**: Some servers provide both local installation packages and remote endpoints
+2. **CSV format**: `timestamp,total,local,remote`
+   - `total`: Total unique servers in registry
+   - `local`: Count of servers with `packages` property
+   - `remote`: Count of servers with `remotes` property
+   - Note: `local + remote` may exceed `total` due to servers with both properties
+
+### Verified Distribution (as of 2025-10-29)
+
+Based on 1,427 servers in the registry:
+- **Local only**: 817 servers (57.2%)
+- **Remote only**: 513 servers (35.9%)
+- **Both**: 48 servers (3.4%)
+- **Neither**: 49 servers (3.4%) - metadata-only entries
+
+**Example servers with both properties**:
+- `ai.shawndurrani/mcp-merchant`
+- `co.pipeboard/meta-ads-mcp`
 
 ## Development
 

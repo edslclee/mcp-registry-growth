@@ -4,30 +4,31 @@ export function aggregateByGranularity(
   snapshots: Snapshot[],
   granularity: Granularity
 ): Snapshot[] {
-  if (granularity === 'hourly') {
+  // Data is already daily, so hourly and daily return as-is
+  if (granularity === 'hourly' || granularity === 'daily') {
     return snapshots;
   }
 
   const groups: Record<string, Snapshot> = {};
 
   for (const snap of snapshots) {
-    const key = getGranularityKey(snap.timestamp, granularity);
+    const key = getGranularityKey(snap.date, granularity);
 
     // Keep latest snapshot per bucket
-    if (!groups[key] || snap.timestamp > groups[key].timestamp) {
+    if (!groups[key] || snap.date > groups[key].date) {
       groups[key] = snap;
     }
   }
 
-  return Object.values(groups);
+  return Object.values(groups).sort((a, b) => a.date.localeCompare(b.date));
 }
 
-function getGranularityKey(timestamp: string, granularity: Granularity): string {
-  const date = new Date(timestamp);
+function getGranularityKey(dateStr: string, granularity: Granularity): string {
+  const date = new Date(dateStr);
 
   switch (granularity) {
     case 'daily':
-      return date.toISOString().split('T')[0];  // YYYY-MM-DD
+      return dateStr;  // Already YYYY-MM-DD format
     case 'weekly':
       const year = date.getUTCFullYear();
       const week = getISOWeek(date);
@@ -35,7 +36,7 @@ function getGranularityKey(timestamp: string, granularity: Granularity): string 
     case 'monthly':
       return `${date.getUTCFullYear()}-${(date.getUTCMonth() + 1).toString().padStart(2, '0')}`;
     default:
-      return timestamp;
+      return dateStr;
   }
 }
 

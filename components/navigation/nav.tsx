@@ -4,13 +4,17 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 
-export function Navigation() {
+interface NavigationProps {
+  lastUpdated?: string
+}
+
+export function Navigation({ lastUpdated }: NavigationProps) {
   const pathname = usePathname()
 
   return (
     <nav className="border-b border-gray-800 bg-gray-900">
       <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center">
+        <div className="flex h-16 items-center justify-between">
           <div className="flex items-center space-x-8">
             <Link href="/" className="text-lg font-semibold text-gray-100">
               MCP Registry Analytics
@@ -36,6 +40,11 @@ export function Navigation() {
               </Link>
             </div>
           </div>
+          {lastUpdated && (
+            <div className="px-2 py-1 bg-slate-700/50 rounded-md text-xs text-slate-300">
+              Last updated: {lastUpdated}
+            </div>
+          )}
         </div>
       </div>
     </nav>

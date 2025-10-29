@@ -139,76 +139,76 @@ export default config;
 
 ## 4. Create Data Aggregation Script
 
-### Create `scripts/aggregate-servers.ps1`
+### Create `scripts/aggregate-servers.sh`
 
-```powershell
+```bash
+#!/bin/bash
 # Fetch all servers from MCP Registry API with pagination
 # Classify as local (has packages) or remote (has remotes)
 # Append timestamp + counts to data/snapshots.csv
 
-$ErrorActionPreference = "Stop"
+set -e
 
-$ENDPOINT = "https://registry.modelcontextprotocol.io/v0/servers"
-$TIMESTAMP = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:00:00Z")
-$LOCAL_COUNT = 0
-$REMOTE_COUNT = 0
-$TOTAL_COUNT = 0
-$CURSOR = ""
+ENDPOINT="https://registry.modelcontextprotocol.io/v0/servers"
+TIMESTAMP=$(date -u +"%Y-%m-%dT%H:00:00Z")
+LOCAL_COUNT=0
+REMOTE_COUNT=0
+TOTAL_COUNT=0
+CURSOR=""
 
-Write-Host "Starting MCP server aggregation at $TIMESTAMP"
+echo "Starting MCP server aggregation at $TIMESTAMP"
 
 # Create data directory if it doesn't exist
-if (-not (Test-Path "data")) {
-    New-Item -ItemType Directory -Path "data" | Out-Null
-}
+mkdir -p data
 
-while ($true) {
+while true; do
     # Fetch page
-    if ($CURSOR -eq "") {
-        $RESPONSE = Invoke-RestMethod -Uri $ENDPOINT -Method Get
-    } else {
-        $RESPONSE = Invoke-RestMethod -Uri "$ENDPOINT?cursor=$CURSOR" -Method Get
-    }
+    if [ -z "$CURSOR" ]; then
+        RESPONSE=$(curl -s "$ENDPOINT")
+    else
+        RESPONSE=$(curl -s "${ENDPOINT}?cursor=${CURSOR}")
+    fi
 
-    # Count servers on this page
-    $PAGE_LOCAL = ($RESPONSE.servers | Where-Object { $_.server.packages -ne $null }).Count
-    $PAGE_REMOTE = ($RESPONSE.servers | Where-Object { $_.server.remotes -ne $null }).Count
-    $PAGE_TOTAL = $RESPONSE.servers.Count
+    # Count servers on this page using jq
+    PAGE_LOCAL=$(echo "$RESPONSE" | jq '[.servers[] | select(.server.packages != null)] | length')
+    PAGE_REMOTE=$(echo "$RESPONSE" | jq '[.servers[] | select(.server.remotes != null)] | length')
+    PAGE_TOTAL=$(echo "$RESPONSE" | jq '.servers | length')
 
-    $LOCAL_COUNT += $PAGE_LOCAL
-    $REMOTE_COUNT += $PAGE_REMOTE
-    $TOTAL_COUNT += $PAGE_TOTAL
+    LOCAL_COUNT=$((LOCAL_COUNT + PAGE_LOCAL))
+    REMOTE_COUNT=$((REMOTE_COUNT + PAGE_REMOTE))
+    TOTAL_COUNT=$((TOTAL_COUNT + PAGE_TOTAL))
 
-    Write-Host "  Page processed: $PAGE_TOTAL servers ($PAGE_LOCAL local, $PAGE_REMOTE remote)"
+    echo "  Page processed: $PAGE_TOTAL servers ($PAGE_LOCAL local, $PAGE_REMOTE remote)"
 
     # Check for next page
-    $NEXT_CURSOR = $RESPONSE.metadata.nextCursor
+    NEXT_CURSOR=$(echo "$RESPONSE" | jq -r '.metadata.nextCursor // empty')
 
-    if (-not $NEXT_CURSOR) {
-        Write-Host "  Reached end of pagination"
+    if [ -z "$NEXT_CURSOR" ]; then
+        echo "  Reached end of pagination"
         break
-    }
+    fi
 
-    $CURSOR = $NEXT_CURSOR
-}
+    CURSOR="$NEXT_CURSOR"
+done
 
-Write-Host "Total servers: $TOTAL_COUNT ($LOCAL_COUNT local, $REMOTE_COUNT remote)"
+echo "Total servers: $TOTAL_COUNT ($LOCAL_COUNT local, $REMOTE_COUNT remote)"
 
 # Create CSV with header if it doesn't exist
-if (-not (Test-Path "data/snapshots.csv")) {
-    "timestamp,total,local,remote" | Out-File -FilePath "data/snapshots.csv" -Encoding utf8
-    Write-Host "Created new snapshots.csv with header"
-}
+if [ ! -f "data/snapshots.csv" ]; then
+    echo "timestamp,total,local,remote" > data/snapshots.csv
+    echo "Created new snapshots.csv with header"
+fi
 
 # Append new row
-"$TIMESTAMP,$TOTAL_COUNT,$LOCAL_COUNT,$REMOTE_COUNT" | Out-File -FilePath "data/snapshots.csv" -Append -Encoding utf8
-Write-Host "Appended snapshot to data/snapshots.csv"
+echo "$TIMESTAMP,$TOTAL_COUNT,$LOCAL_COUNT,$REMOTE_COUNT" >> data/snapshots.csv
+echo "Appended snapshot to data/snapshots.csv"
 ```
 
-**Test locally**:
-```powershell
-pwsh scripts/aggregate-servers.ps1
-Get-Content data/snapshots.csv
+**Make executable and test locally**:
+```bash
+chmod +x scripts/aggregate-servers.sh
+bash scripts/aggregate-servers.sh
+cat data/snapshots.csv
 ```
 
 ---
@@ -227,27 +227,26 @@ on:
 
 jobs:
   aggregate:
-    runs-on: windows-latest
+    runs-on: macos-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Run aggregation script
-        run: pwsh scripts/aggregate-servers.ps1
+        run: bash scripts/aggregate-servers.sh
 
       - name: Commit and push updated data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data/snapshots.csv
-          if (git diff --staged --quiet) {
-            Write-Host "No changes to commit"
-          } else {
-            git commit -m "Update server snapshots [$((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm'))]"
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update server snapshots [$(date -u +'%Y-%m-%d %H:%M')]"
             git push
-          }
-        shell: pwsh
+          fi
 ```
 
 **Test the workflow**:

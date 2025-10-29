@@ -5,6 +5,16 @@
 **Status**: Draft
 **Input**: User description: "We are building a one page web app that is going to list the MCP server analytics. We will be using the existing MCP Registry API to aggregate the data regularly and then present it to the user on one rich-formated page with graphs. Page should be dark themed, it should be modern color scheme(puple, blue, pink) There are always ways to filter the servers by local or remote and that will reflect in the charts. The charts are timecharts - date on the X axis counts on the Y axis, with hourly granularity. Granularity can also be switched - we can have hourly, daily, weekly, monthly. Because the counts are 'latest snapshots' we can always rely on the latest value. The site also should have an about page."
 
+## Clarifications
+
+### Session 2025-10-29
+
+- Q: What is the required operating system environment for running the data aggregation script? → A: macOS/Linux with bash - Use bash scripting on Unix-based systems for data collection
+- Q: How should timezone differences be handled in the time-series data display? → A: UTC only - Display all timestamps in UTC for consistency and avoid DST issues
+- Q: What should happen when the MCP Registry API is unavailable or returns no data? → A: Show cached data with warning - Display last successfully fetched data with a banner indicating it may be stale
+- Q: How should the system handle date ranges where no data exists (e.g., before servers were tracked)? → A: Show empty chart with message - Display chart axes with "No data available for this time range" message
+- Q: What is the frequency for automated data collection from the MCP Registry API? → A: Hourly - Update once per hour to match default granularity
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - View Server Analytics Overview (Priority: P1)
@@ -78,19 +88,18 @@ Users want to understand what the dashboard shows, data sources, update frequenc
 
 ### Edge Cases
 
-- What happens when the MCP Registry API is unavailable or returns no data?
-- How does the system handle date ranges where no data exists (e.g., before servers were tracked)?
+- **API Unavailable**: When the MCP Registry API is unavailable or returns no data, display the last successfully cached data with a visible warning banner indicating the data may be stale
+- **No Data for Time Range**: When no data exists for a selected time range (e.g., before servers were tracked), display chart axes with "No data available for this time range" message
 - What happens if a user switches filters and granularity rapidly in succession?
 - How does the dashboard behave on very small screens (mobile phones)?
 - What happens when the latest snapshot is delayed or stale?
-- How are timezone differences handled in the time-series data?
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
 - **FR-001**: System MUST display time-series charts with dates on the X-axis and server counts on the Y-axis
-- **FR-002**: System MUST fetch data from the MCP Registry API endpoint that provides server snapshot data
+- **FR-002**: System MUST collect data from the MCP Registry API endpoint hourly via automated GitHub Actions workflow
 - **FR-003**: System MUST use "latest snapshot" values for displaying current counts
 - **FR-004**: System MUST provide filter options for "All servers", "Local servers", and "Remote servers"
 - **FR-005**: System MUST update all charts when a filter is applied
@@ -101,9 +110,11 @@ Users want to understand what the dashboard shows, data sources, update frequenc
 - **FR-010**: System MUST use a modern color scheme incorporating purple, blue, and pink
 - **FR-011**: System MUST provide an About page with dashboard information
 - **FR-012**: System MUST provide clear navigation between the Dashboard and About pages
-- **FR-013**: System MUST handle API errors gracefully with user-friendly messages
+- **FR-013**: System MUST handle API errors gracefully by displaying cached data with a visible warning banner when API is unavailable
 - **FR-014**: System MUST display loading states while fetching data
 - **FR-015**: System MUST be responsive across desktop, tablet, and mobile devices
+- **FR-016**: System MUST display all timestamps in UTC timezone to ensure consistency and avoid DST complications
+- **FR-017**: System MUST display an empty chart with "No data available for this time range" message when no data exists for the selected period
 
 ### Key Entities
 
@@ -118,10 +129,11 @@ Users want to understand what the dashboard shows, data sources, update frequenc
 - API responses include a server type field (local/remote) or can be distinguished
 - Data aggregation for different granularities will use the latest snapshot value within each time bucket
 - The dashboard will be a single-page application with client-side routing for the About page
-- API updates occur regularly enough that hourly granularity is meaningful
-- Timezone for data display will be user's local timezone
+- Automated data collection runs hourly via GitHub Actions to maintain fresh data aligned with default granularity
+- All timestamps displayed in UTC timezone to avoid DST complications and ensure consistency
 - Chart library selection deferred to implementation phase (constitution principle: minimal dependencies)
 - Specific API endpoint URL and authentication requirements will be determined during the planning phase
+- Data aggregation script runs on macOS/Linux using bash with standard Unix tools (curl, jq)
 
 ## Success Criteria *(mandatory)*
 

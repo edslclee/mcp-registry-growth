@@ -1,7 +1,7 @@
 // === Core Data Types ===
 
 export interface Snapshot {
-  timestamp: string;  // ISO 8601
+  date: string;  // Date in YYYY-MM-DD format (from publishedAt)
   total: number;
   local: number;
   remote: number;
@@ -27,7 +27,7 @@ export interface FilterState {
 // === Chart Data ===
 
 export interface ChartDataPoint {
-  timestamp: string;  // Formatted date string for display
+  date: string;  // Formatted date string for display (YYYY-MM-DD)
   total: number;
   local: number;
   remote: number;
@@ -36,7 +36,7 @@ export interface ChartDataPoint {
 // === CSV Parsing ===
 
 export interface CSVRow {
-  timestamp: string;
+  date: string;
   total: string;
   local: string;
   remote: string;

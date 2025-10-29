@@ -30,8 +30,8 @@ export function loadSnapshots(): TimeSeries {
 
   return {
     snapshots,
-    startDate: snapshots[0].timestamp,
-    endDate: snapshots[snapshots.length - 1].timestamp,
+    startDate: snapshots[0].date,
+    endDate: snapshots[snapshots.length - 1].date,
     totalSnapshots: snapshots.length
   };
 }
@@ -45,22 +45,22 @@ function parseCSV(content: string): Snapshot[] {
   for (let i = 1; i < lines.length; i++) {
     const values = lines[i].split(',');
 
-    const timestamp = values[0];
+    const date = values[0];
     const total = parseInt(values[1], 10);
     const local = parseInt(values[2], 10);
     const remote = parseInt(values[3], 10);
 
     // Validate
-    if (!timestamp || isNaN(total) || isNaN(local) || isNaN(remote)) {
+    if (!date || isNaN(total) || isNaN(local) || isNaN(remote)) {
       console.warn(`Skipping invalid row ${i}: ${lines[i]}`);
       continue;
     }
 
-    snapshots.push({ timestamp, total, local, remote });
+    snapshots.push({ date, total, local, remote });
   }
 
-  // Sort by timestamp
-  snapshots.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+  // Sort by date
+  snapshots.sort((a, b) => a.date.localeCompare(b.date));
 
   return snapshots;
 }

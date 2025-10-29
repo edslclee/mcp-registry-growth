@@ -27,7 +27,7 @@
 - [ ] T001 Create Next.js project with TypeScript, Tailwind CSS, and App Router
 - [ ] T002 Configure Next.js for static export in next.config.js (output: 'export')
 - [ ] T003 [P] Install and initialize ShadCN UI (shadcn-ui init)
-- [ ] T004 [P] Install Recharts and types (npm install recharts @types/recharts)
+- [ ] T004 [P] Install Recharts and types (npm install recharts)
 - [ ] T005 [P] Create directory structure (app/, components/, lib/, scripts/, data/, .github/workflows/)
 - [ ] T006 [P] Configure Tailwind with dark theme colors in tailwind.config.ts (purple/blue/pink)
 - [ ] T007 [P] Set up global styles with dark theme in app/globals.css
@@ -41,10 +41,10 @@
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
 - [ ] T008 Create TypeScript types in lib/types.ts (Snapshot, TimeSeries, ServerType, Granularity, ChartDataPoint, FilterState)
-- [ ] T009 Create PowerShell aggregation script in scripts/aggregate-servers.ps1 (fetch MCP Registry API with pagination, classify local/remote, append to CSV)
-- [ ] T010 Create GitHub Actions workflow in .github/workflows/aggregate-data.yml (hourly cron on windows-latest runner)
+- [ ] T009 Create bash aggregation script in scripts/aggregate-servers.sh (fetch MCP Registry API with pagination, classify local/remote, append to CSV)
+- [ ] T010 Create GitHub Actions workflow in .github/workflows/aggregate-data.yml (hourly cron on macos-latest runner)
 - [ ] T011 Create initial empty CSV file with header in data/snapshots.csv (timestamp,total,local,remote)
-- [ ] T012 Test aggregation script locally to verify CSV generation (pwsh scripts/aggregate-servers.ps1)
+- [ ] T012 Test aggregation script locally to verify CSV generation (bash scripts/aggregate-servers.sh)
 - [ ] T013 Install ShadCN UI components needed (button, card, select, skeleton): npx shadcn-ui add button card select skeleton
 - [ ] T014 Create root layout in app/layout.tsx (dark theme HTML class, Inter font, container structure)
 - [ ] T015 Create navigation component in components/navigation/nav.tsx (Dashboard and About links)
@@ -59,286 +59,242 @@
 
 **Independent Test**: Load dashboard and verify time-series chart displays with dates on X-axis, counts on Y-axis, dark purple/blue/pink theme, hourly granularity by default
 
-### Implementation for User Story 1
+### Data Layer
 
-- [ ] T016 [P] [US1] Implement CSV parsing function in lib/data-loader.ts (parseCSV with native split/map, validation)
-- [ ] T017 [P] [US1] Implement loadSnapshots function in lib/data-loader.ts (read CSV file, parse, return TimeSeries)
-- [ ] T018 [US1] Implement aggregateByGranularity function in lib/data-aggregator.ts (group by hour/day/week/month, return latest snapshot per bucket)
-- [ ] T019 [US1] Implement toChartData function in lib/data-aggregator.ts (convert Snapshot[] to ChartDataPoint[], format dates, extract counts)
-- [ ] T020 [US1] Create TimeSeriesChart component in components/charts/time-series-chart.tsx (Recharts LineChart with ResponsiveContainer, purple line, dark grid, tooltip)
-- [ ] T021 [US1] Create Dashboard page in app/page.tsx (call loadSnapshots at build time, pass data to components, display with hourly default)
-- [ ] T022 [US1] Style TimeSeriesChart with dark theme (gray-900 background, purple line color, responsive height)
-- [ ] T023 [US1] Add empty state handling to TimeSeriesChart (show message when data.length === 0)
+- [ ] T016 [P] [US1] Create data loader in lib/data-loader.ts (read CSV, parse to Snapshot[], validate format, handle errors)
+- [ ] T017 [P] [US1] Create data aggregator in lib/data-aggregator.ts (aggregate snapshots by granularity, filter by server type)
 
-**Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
+### UI Components
+
+- [ ] T018 [P] [US1] Create time-series chart component in components/charts/time-series-chart.tsx (Recharts LineChart, responsive, UTC timestamps, purple/blue/pink colors)
+- [ ] T019 [P] [US1] Create dashboard client component in components/dashboard/dashboard-client.tsx (loads data, renders charts, manages state)
+
+### Pages
+
+- [ ] T020 [US1] Create main dashboard page in app/page.tsx (static props with CSV data, renders dashboard-client component)
+
+### Integration & Validation
+
+- [ ] T021 [US1] Verify dark theme applies across dashboard (purple/blue/pink color scheme per Tailwind config)
+- [ ] T022 [US1] Verify hourly granularity displays by default (FR-007)
+- [ ] T023 [US1] Verify UTC timestamps display correctly (FR-016)
+- [ ] T024 [US1] Verify page loads within 3 seconds (SC-001)
+- [ ] T025 [US1] Verify responsive layout 320px-4K (SC-002, FR-015)
+
+**Checkpoint**: User Story 1 complete and independently testable
 
 ---
 
 ## Phase 4: User Story 2 - Filter by Server Type (Priority: P2)
 
-**Goal**: Add filter controls to toggle between All/Local/Remote servers and update charts accordingly
+**Goal**: Add filtering UI to show All/Local/Remote servers and update charts accordingly
 
-**Independent Test**: Click Local/Remote/All filter options and verify charts update to show only selected server type metrics
+**Independent Test**: Select each filter option and verify charts update to show only selected server type
 
-### Implementation for User Story 2
+**Dependencies**: US1 must be complete (needs charts and data infrastructure)
 
-- [ ] T024 [P] [US2] Create ServerTypeFilter component in components/filters/server-type-filter.tsx (ShadCN Select with All/Local/Remote options)
-- [ ] T025 [US2] Implement filterByServerType function in lib/data-aggregator.ts (transform snapshots to use correct count field based on serverType)
-- [ ] T026 [US2] Add serverType state to Dashboard page in app/page.tsx (useState hook, default 'all')
-- [ ] T027 [US2] Integrate ServerTypeFilter into Dashboard page (pass value and onChange handler)
-- [ ] T028 [US2] Wire filterByServerType into data transformation pipeline in app/page.tsx (apply before toChartData)
-- [ ] T029 [US2] Style ServerTypeFilter with dark theme (match navigation colors, focus states)
+### UI Components
 
-**Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
+- [ ] T026 [P] [US2] Create server type filter component in components/filters/server-type-filter.tsx (All/Local/Remote selector using ShadCN Select)
+- [ ] T027 [US2] Integrate filter into dashboard-client component (manage serverType state, pass to data aggregator)
+
+### Integration & Validation
+
+- [ ] T028 [US2] Verify "Local servers" filter shows only local metrics (Acceptance Scenario 1)
+- [ ] T029 [US2] Verify "Remote servers" filter shows only remote metrics (Acceptance Scenario 2)
+- [ ] T030 [US2] Verify "All servers" filter shows combined metrics (Acceptance Scenario 3)
+- [ ] T031 [US2] Verify filter changes update smoothly without page reload (Acceptance Scenario 4, SC-003 <1 second)
+
+**Checkpoint**: User Story 2 complete and independently testable
 
 ---
 
 ## Phase 5: User Story 3 - Adjust Time Granularity (Priority: P3)
 
-**Goal**: Add granularity selector to switch between hourly/daily/weekly/monthly views and re-aggregate data
+**Goal**: Add granularity selector (Hourly/Daily/Weekly/Monthly) and aggregate data accordingly
 
-**Independent Test**: Click Hourly/Daily/Weekly/Monthly buttons and verify chart X-axis and data aggregation update correctly
+**Independent Test**: Switch between granularity options and verify chart X-axis and data aggregation update
 
-### Implementation for User Story 3
+**Dependencies**: US1 must be complete (needs data aggregator)
 
-- [ ] T030 [P] [US3] Create GranularitySelector component in components/filters/granularity-selector.tsx (4 buttons with toggle group, active state styling)
-- [ ] T031 [US3] Add granularity state to Dashboard page in app/page.tsx (useState hook, default 'hourly')
-- [ ] T032 [US3] Integrate GranularitySelector into Dashboard page (pass value and onChange handler)
-- [ ] T033 [US3] Wire aggregateByGranularity into data transformation pipeline in app/page.tsx (apply before filterByServerType)
-- [ ] T034 [US3] Update toChartData date formatting logic in lib/data-aggregator.ts (format dates based on granularity: hourly="Oct 28, 14:00", daily="Oct 28", etc.)
-- [ ] T035 [US3] Style GranularitySelector with dark theme (purple active button, responsive mobile stack)
-- [ ] T036 [US3] Add smooth transition handling for granularity changes (ensure chart re-renders cleanly)
+### UI Components
 
-**Checkpoint**: All core user stories (US1, US2, US3) should now be independently functional
+- [ ] T032 [P] [US3] Create granularity selector component in components/filters/granularity-selector.tsx (Hourly/Daily/Weekly/Monthly using ShadCN Select)
+- [ ] T033 [US3] Enhance data aggregator to support all granularities (daily, weekly, monthly aggregation logic using latest snapshot per period)
+
+### Integration
+
+- [ ] T034 [US3] Integrate granularity selector into dashboard-client component (manage granularity state, pass to data aggregator)
+
+### Validation
+
+- [ ] T035 [US3] Verify daily granularity aggregates to one point per day (Acceptance Scenario 1)
+- [ ] T036 [US3] Verify weekly granularity aggregates to one point per week (Acceptance Scenario 2)
+- [ ] T037 [US3] Verify monthly granularity aggregates to one point per month (Acceptance Scenario 3)
+- [ ] T038 [US3] Verify granularity respects active filter (Acceptance Scenario 4)
+- [ ] T039 [US3] Verify smooth transitions between granularities (Acceptance Scenario 5, SC-004 <2 seconds)
+
+**Checkpoint**: User Story 3 complete and independently testable
 
 ---
 
 ## Phase 6: User Story 4 - Learn About the Dashboard (Priority: P4)
 
-**Goal**: Create About page with documentation about data sources, update frequency, and methodology
+**Goal**: Create About page with dashboard information and navigation
 
-**Independent Test**: Navigate to About page and verify it contains clear information about MCP Registry API, server classification, and update schedule
+**Independent Test**: Navigate to About page and verify it contains information about data source, update frequency, and metrics
 
-### Implementation for User Story 4
+**Dependencies**: US1 must be complete (needs navigation component from Foundation)
 
-- [ ] T037 [US4] Create About page in app/about/page.tsx (prose content with dark theme styling)
-- [ ] T038 [US4] Write About page content sections (What is this dashboard, Data Source, Server Classification, Update Frequency, Granularity Options)
-- [ ] T039 [US4] Style About page with Tailwind prose-invert for dark theme readability
-- [ ] T040 [US4] Add metadata to About page (title, description)
-- [ ] T041 [US4] Verify navigation links work bidirectionally (Dashboard ↔ About)
+### Pages
 
-**Checkpoint**: All user stories should now be independently functional with full navigation
+- [ ] T040 [P] [US4] Create About page in app/about/page.tsx (MCP Registry API description, hourly updates, metric definitions, navigation back to dashboard)
+
+### Content
+
+- [ ] T041 [US4] Add content to About page (data source explanation, update frequency, local vs remote server definitions, timestamp timezone note)
+
+### Validation
+
+- [ ] T042 [US4] Verify clicking "About" navigates to About page (Acceptance Scenario 1)
+- [ ] T043 [US4] Verify About page explains data source and update frequency (Acceptance Scenario 2)
+- [ ] T044 [US4] Verify navigation back to dashboard works (Acceptance Scenario 3)
+- [ ] T045 [US4] Verify navigation is consistent on both pages (Acceptance Scenario 4)
+
+**Checkpoint**: User Story 4 complete and independently testable
 
 ---
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-**Purpose**: Improvements that affect multiple user stories
+**Purpose**: Final touches and edge cases not tied to specific user stories
 
-- [ ] T042 [P] Add page metadata to Dashboard page in app/page.tsx (title, description)
-- [ ] T043 [P] Implement responsive design testing for mobile (320px), tablet (768px), desktop (1024px+), 4K (2560px+)
-- [ ] T044 [P] Add loading skeleton to TimeSeriesChart component (ShadCN Skeleton during data load)
-- [ ] T045 [P] Implement error handling for missing CSV file in lib/data-loader.ts (return empty TimeSeries, log warning)
-- [ ] T046 [P] Add ARIA labels and keyboard navigation to all interactive components (filters, navigation)
-- [ ] T047 [P] Verify WCAG AA color contrast for dark theme (purple/blue/pink on dark backgrounds)
-- [ ] T048 Test static build generation (npm run build, verify out/ directory contains static files)
-- [ ] T049 [P] Optimize bundle size (analyze with next/bundle-analyzer, verify <305KB gzipped)
-- [ ] T050 [P] Add .gitignore entry for /out directory
-- [ ] T051 Test GitHub Actions workflow (manual trigger, verify CSV updates and commits)
-- [ ] T052 Verify deployment to static hosting (test on Vercel/Netlify/GitHub Pages)
+### Error Handling (from Clarifications)
 
----
+- [ ] T046 [P] Add error boundary for graceful error display in app/layout.tsx
+- [ ] T047 [P] Implement cached data with warning banner when CSV load fails (FR-013)
+- [ ] T048 [P] Implement empty state message "No data available for this time range" when chart has no data (FR-017)
 
-## Dependencies & Execution Order
+### Performance & Accessibility
 
-### Phase Dependencies
+- [ ] T049 [P] Add loading skeleton states for charts using ShadCN Skeleton component (FR-014)
+- [ ] T050 [P] Verify bundle size <2MB after build (SC-007)
+- [ ] T051 [P] Run accessibility audit with axe DevTools for WCAG AA dark theme contrast (SC-008)
 
-- **Setup (Phase 1)**: No dependencies - can start immediately
-- **Foundational (Phase 2)**: Depends on Setup completion - BLOCKS all user stories
-- **User Stories (Phase 3-6)**: All depend on Foundational phase completion
-  - User stories can then proceed in parallel (if staffed)
-  - Or sequentially in priority order (P1 → P2 → P3 → P4)
-- **Polish (Phase 7)**: Depends on all desired user stories being complete
+### GitHub Actions Integration
 
-### User Story Dependencies
-
-- **User Story 1 (P1)**: Can start after Foundational (Phase 2) - No dependencies on other stories
-- **User Story 2 (P2)**: Can start after Foundational (Phase 2) - Builds on US1 but independently testable (uses same chart, adds filter)
-- **User Story 3 (P3)**: Can start after Foundational (Phase 2) - Builds on US1/US2 but independently testable (adds granularity control)
-- **User Story 4 (P4)**: Can start after Foundational (Phase 2) - No dependencies on other stories (separate About page)
-
-### Within Each User Story
-
-- Models/Types before services (T016-T017 before T018-T019)
-- Services before components (T018-T019 before T020)
-- Components before pages (T020 before T021)
-- Core implementation before styling (T021 before T022)
-- Story complete before moving to next priority
-
-### Parallel Opportunities
-
-- All Setup tasks marked [P] can run in parallel (T003, T004, T005, T006, T007)
-- Within User Story 1: T016 and T017 can run in parallel (different functions, same file scope ok)
-- Within User Story 2: T024 and T025 can run in parallel (different files)
-- Within User Story 3: T030 can start as soon as T024 is complete (similar component pattern)
-- User Story 4 can run completely in parallel with US2 and US3 (separate page, no shared code)
-- All Polish tasks marked [P] can run in parallel (T042-T047, T049-T050)
+- [ ] T052 Trigger manual GitHub Actions workflow run to test hourly data collection
+- [ ] T053 Verify CSV updates commit and push correctly to repository
+- [ ] T054 Verify new data reflects in dashboard after rebuild
 
 ---
 
-## Parallel Example: User Story 1
+## Dependencies & Execution Strategy
 
-```bash
-# After Foundational phase completes:
+### Story Completion Order
 
-# Launch data processing in parallel:
-Task: "Implement CSV parsing function in lib/data-loader.ts"
-Task: "Implement loadSnapshots function in lib/data-loader.ts"
+```
+Phase 1 (Setup) ────────────────────────────┐
+                                            │
+Phase 2 (Foundation) ───────────────────────┤
+                                            ▼
+Phase 3 (US1: View Analytics) ──────────────┤
+                                            │
+         ┌──────────────────────────────────┘
+         │
+         ├─► Phase 4 (US2: Filter) ──────► Requires US1
+         │
+         ├─► Phase 5 (US3: Granularity) ──► Requires US1
+         │
+         └─► Phase 6 (US4: About) ─────────► Requires US1 (navigation)
 
-# Then services (depends on data loading):
-Task: "Implement aggregateByGranularity function in lib/data-aggregator.ts"
-Task: "Implement toChartData function in lib/data-aggregator.ts"
-
-# Then UI components and pages (depends on services):
-Task: "Create TimeSeriesChart component"
-Task: "Create Dashboard page"
+Phase 7 (Polish) ───────────────────────────► Can run after any story
 ```
 
----
+### Parallel Opportunities by Phase
 
-## Parallel Example: Multiple User Stories
+**Phase 1 (Setup)**: T003, T004, T005, T006, T007 can run in parallel (5 tasks)
 
-```bash
-# After Foundational phase completes, with multiple developers:
+**Phase 2 (Foundation)**: T013, T014, T015 can run in parallel after T008-T012 complete (3 tasks)
 
-# Developer A: User Story 1 (P1 - MVP)
-Task: "T016-T023 (implement core dashboard with charts)"
+**Phase 3 (US1)**: T016, T017, T018, T019 can run in parallel (4 tasks)
 
-# Developer B: User Story 4 (P4 - independent About page)
-Task: "T037-T041 (create About page, no dependencies on US1)"
+**Phase 4 (US2)**: T026 can run in parallel with T027 prep work (1 task)
 
-# Once US1 complete:
-# Developer A: User Story 2 (P2 - add filtering)
-Task: "T024-T029 (add server type filter)"
+**Phase 5 (US3)**: T032, T033 can run in parallel (2 tasks)
 
-# Developer B: User Story 3 (P3 - add granularity)
-Task: "T030-T036 (add granularity selector)"
-# Note: US2 and US3 can proceed in parallel if separate developers
-```
+**Phase 6 (US4)**: T040, T041 can run in parallel (2 tasks)
 
----
+**Phase 7 (Polish)**: T046, T047, T048, T049, T050, T051 can all run in parallel (6 tasks)
 
-## Implementation Strategy
+**Total Parallel Opportunities**: ~23 tasks can be parallelized
 
-### MVP First (User Story 1 Only)
+### MVP Scope Recommendation
 
-1. Complete Phase 1: Setup (T001-T007)
-2. Complete Phase 2: Foundational (T008-T015) - **CRITICAL BLOCKING PHASE**
-3. Complete Phase 3: User Story 1 (T016-T023)
-4. **STOP and VALIDATE**: Test User Story 1 independently
-   - Load dashboard
-   - Verify chart displays with hourly data
-   - Check dark theme with purple/blue/pink colors
-   - Verify responsive design
-5. Deploy/demo if ready (minimal viable product)
+**Minimum Viable Product**: Phase 1 + Phase 2 + Phase 3 (US1 only)
 
-### Incremental Delivery
+This delivers:
+- Functional dashboard with time-series charts
+- Dark theme with purple/blue/pink colors
+- Hourly granularity by default
+- UTC timestamps
+- Automated data collection via GitHub Actions
+- Static site deployment ready
 
-1. Complete Setup + Foundational → Foundation ready
-2. Add User Story 1 (T016-T023) → Test independently → Deploy/Demo (MVP! 🎯)
-3. Add User Story 2 (T024-T029) → Test independently → Deploy/Demo (filtering added)
-4. Add User Story 3 (T030-T036) → Test independently → Deploy/Demo (granularity added)
-5. Add User Story 4 (T037-T041) → Test independently → Deploy/Demo (documentation added)
-6. Add Polish (T042-T052) → Final QA → Production deploy
-7. Each story adds value without breaking previous stories
+**Tasks**: T001-T025 (25 tasks)
+**Value**: Core visualization capability - users can see MCP server growth trends
 
-### Parallel Team Strategy
-
-With multiple developers:
-
-1. **Team completes Setup + Foundational together** (T001-T015)
-2. **Once Foundational is done**:
-   - Developer A: User Story 1 (T016-T023) - Core charts
-   - Developer B: User Story 4 (T037-T041) - About page (no dependencies on US1)
-3. **After US1 complete**:
-   - Developer A: User Story 2 (T024-T029) - Filtering
-   - Developer B: User Story 3 (T030-T036) - Granularity
-   - (US2 and US3 touch same Dashboard page but different sections, can proceed in parallel with coordination)
-4. **All stories complete**: Both developers tackle Polish tasks in parallel (T042-T052)
+**Incremental Delivery After MVP**:
+1. **+US2 (Filter)**: T026-T031 (6 tasks) - Adds local vs remote comparison
+2. **+US3 (Granularity)**: T032-T039 (8 tasks) - Adds time-scale analysis
+3. **+US4 (About)**: T040-T045 (6 tasks) - Adds context/documentation
+4. **+Polish**: T046-T054 (9 tasks) - Hardening and edge cases
 
 ---
 
-## Notes
+## Implementation Notes
 
-- [P] tasks = different files, no dependencies
-- [Story] label maps task to specific user story for traceability
-- Each user story should be independently completable and testable
-- Commit after each task or logical group
-- Stop at any checkpoint to validate story independently
-- Foundational phase (T008-T015) is **CRITICAL** - blocks all user story work
-- GitHub Actions workflow (T010) uses Windows runner with PowerShell script
-- PowerShell script (T009) uses Invoke-RestMethod for JSON parsing (no external tools needed)
-- Tests not included per spec (not requested in requirements)
-- Total: 52 tasks across 7 phases
-- MVP scope: 23 tasks (Setup + Foundational + US1)
-- Parallel opportunities: ~15 tasks can run concurrently with proper staffing
+### Task Execution Tips
 
----
+- **Commit Strategy**: Commit after each task or logical group
+- **Testing at Checkpoints**: Stop at each checkpoint to validate story independently
+- **Foundational Phase**: Critical - blocks all user story work until complete
 
-## Task Count by Phase
+### Technology-Specific Notes
 
-| Phase | Task Range | Count | Type |
-|-------|------------|-------|------|
-| Setup | T001-T007 | 7 | Infrastructure |
-| Foundational | T008-T015 | 8 | **BLOCKING** |
-| User Story 1 (P1) | T016-T023 | 8 | MVP Core |
-| User Story 2 (P2) | T024-T029 | 6 | Feature Add |
-| User Story 3 (P3) | T030-T036 | 7 | Feature Add |
-| User Story 4 (P4) | T037-T041 | 5 | Documentation |
-| Polish | T042-T052 | 11 | Cross-cutting |
-| **TOTAL** | T001-T052 | **52** | |
+- **Next.js App Router**: Use `app/` directory structure, all pages are React Server Components by default
+- **Static Export**: CSV data embedded at build time via `fs.readFileSync` in page components
+- **ShadCN UI**: Components are copy-pasted, not npm installed - customize as needed
+- **Recharts**: Fully client-side, mark components with `"use client"` directive
+- **GitHub Actions**: Uses macos-latest runner with bash script (curl + jq)
+- **Bash Script**: Requires chmod +x on scripts/aggregate-servers.sh
+
+### Success Criteria Mapping
+
+| Success Criterion | Validation Task |
+|-------------------|-----------------|
+| SC-001: Page load <3s | T024 |
+| SC-002: Responsive 320px-4K | T025 |
+| SC-003: Filter change <1s | T031 |
+| SC-004: Granularity change <2s | T039 |
+| SC-007: Bundle size <2MB | T050 |
+| SC-008: WCAG AA contrast | T051 |
 
 ---
 
-## Success Criteria Mapping
+## Summary
 
-| Success Criterion | Related Tasks | Validation Method |
-|-------------------|---------------|-------------------|
-| SC-001: Page load <3s | T021, T048, T049 | Lighthouse audit |
-| SC-002: Responsive 320px-4K | T006, T043, T047 | Manual testing across breakpoints |
-| SC-003: Filter changes <1s | T028, T033 | Browser DevTools performance |
-| SC-004: Granularity <2s | T033, T034 | Browser DevTools performance |
-| SC-005: Understand in 10s | T020, T021, T022 | User testing |
-| SC-006: 1000+ snapshots | T016, T017, T019 | Load testing with sample data |
-| SC-007: Bundle <2MB | T049 | next/bundle-analyzer |
-| SC-008: WCAG AA contrast | T047 | axe DevTools audit |
+- **Total Tasks**: 54
+- **Setup Phase**: 7 tasks
+- **Foundational Phase**: 8 tasks
+- **User Story 1 (P1)**: 10 tasks 🎯 MVP
+- **User Story 2 (P2)**: 6 tasks
+- **User Story 3 (P3)**: 8 tasks
+- **User Story 4 (P4)**: 6 tasks
+- **Polish Phase**: 9 tasks
 
----
+- **Parallel Opportunities**: ~23 tasks (42%)
+- **MVP Scope**: 25 tasks (Setup + Foundation + US1)
+- **Independent Stories**: Each user story can be tested independently after US1
 
-## PowerShell Script Details (T009)
-
-The PowerShell aggregation script uses:
-- `Invoke-RestMethod` for API calls (built-in JSON parsing)
-- `Where-Object` for filtering servers by packages/remotes
-- `Out-File` with UTF-8 encoding for CSV generation
-- No external dependencies (no jq needed)
-- Runs on GitHub Actions windows-latest runner
-
-**Key differences from bash**:
-- No `chmod +x` needed (Windows doesn't require executable bit)
-- Uses `pwsh` instead of `bash` in GitHub Actions
-- PowerShell Core available by default on Windows runners
-
----
-
-## Suggested First Steps
-
-1. **Run T001**: Initialize Next.js project with TypeScript
-2. **Run T002-T007 in parallel**: Configure build settings, install dependencies, set up theme
-3. **Run T008-T015**: Complete foundational phase (CRITICAL - blocks everything else)
-4. **Test foundation**: Run `npm run dev`, verify empty app runs with dark theme
-5. **Run T016-T023 (User Story 1)**: Implement MVP dashboard with charts
-6. **Validate MVP**: Load dashboard, verify chart displays, check theme
-7. **Deploy MVP** or continue to User Story 2
-
-Good luck! 🚀
+**Suggested First Steps**: Execute Phase 1 and Phase 2 sequentially, then begin Phase 3 (US1) for MVP delivery.
